@@ -4,7 +4,7 @@ import MapContent from './MapContent';
 const Map = () => {
   return (
     <div style={{ height: 600, width: 800 }}>
-      Map
+      {/* Map */}
       {/* <ColorPicker /> */}
       <MapContent />
     </div>

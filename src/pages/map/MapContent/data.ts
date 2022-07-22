@@ -1,3 +1,6 @@
+import zhejiangJson from '@/static/json/zhejiang.json';
+import chinaJson from '@/static/json/china.json';
+
 export const tagData = [
   {
     cityId: '110100',
@@ -56,3 +59,8 @@ export const tagData = [
     deviceCount: 34,
   },
 ];
+
+export const adCodeMap = {
+  330000: zhejiangJson,
+  0: chinaJson,
+};
