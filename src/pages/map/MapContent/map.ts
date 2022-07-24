@@ -17,9 +17,42 @@ import {
 } from '@/pages/three-test/example/mesh';
 import { adCodeMap } from './data';
 import skyPng from '@/static/img/sky.png';
+const typeList = [];
+
+const vertexshader = `
+    varying vec2 vUv;
+
+    void main() {
+
+        vUv = uv;
+
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+    }
+`;
+
+const fragmentshader = `
+    uniform sampler2D baseTexture;
+    uniform sampler2D bloomTexture;
+
+    varying vec2 vUv;
+
+    void main() {
+
+        gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
+
+    }
+`;
+
+const highLightFilterList = ['Line', 'Mesh'];
+
+const materials = {};
 
 const ENTIRE_SCENE = 0,
   BLOOM_SCENE = 1;
+
+const bloomLayer = new THREE.Layers();
+bloomLayer.set(BLOOM_SCENE);
 
 class MapRender {
   container = document.getElementById('container');
@@ -47,13 +80,11 @@ class MapRender {
   init() {
     // THREE.Cache.enabled = true;
 
-    const bloomLayer = new THREE.Layers();
-    bloomLayer.set(BLOOM_SCENE);
-
     this.cubeMesh = cubeMaterialRender();
-    // this.cubeMesh.layers.set(1);
+    this.cubeMesh.layers.enable(BLOOM_SCENE);
+    // this.cubeMesh.visible = false;
 
-    this.scene1.add(this.cubeMesh);
+    this.scene.add(this.cubeMesh);
 
     this.setScene();
     this.setCamera();
@@ -70,7 +101,7 @@ class MapRender {
     const texture = textureLoader.load(skyPng);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    this.scene.background = texture;
+    // this.scene.background = texture;
   }
 
   setHelper() {
@@ -85,19 +116,19 @@ class MapRender {
 
   // 相机动画
   cameraMove(fromPosition, targetPoint) {
-    console.log('cameraMove', targetPoint);
+    // console.log('cameraMove', targetPoint);
     const { x, y, z } = targetPoint.point;
     const targetProvince = targetPoint.object.parent;
     const provinceInfo = targetProvince.properties;
 
     // 设定相机初始位置
-    var coords = { ...fromPosition };
+    const coords = { ...fromPosition };
 
     new TWEEN.Tween(coords)
       .to({ x, y, z: 0 }, 1000) // 指定目标位置和耗时.
       .easing(TWEEN.Easing.Quadratic.Out) // 指定动画效果曲线.
       .onStart(() => {
-        let v = new THREE.Vector3(x, y, 0);
+        const v = new THREE.Vector3(x, y, 0);
         this.controls.target = v;
         this.camera.lookAt(v);
         console.log('onStart');
@@ -143,7 +174,7 @@ class MapRender {
   renderProvinceMap(provinceInfo, targetScene) {
     const { adcode } = provinceInfo;
     const provinceJson = adCodeMap[adcode];
-    console.log('provinceJson', provinceJson);
+    // console.log('provinceJson', provinceJson);
 
     if (!provinceJson) return;
     this.currentLevel += 1;
@@ -185,13 +216,33 @@ class MapRender {
     bloomComposer.addPass(renderScene);
     bloomComposer.addPass(bloomPass);
     this.bloomComposer = bloomComposer;
+
+    const finalPass = new ShaderPass(
+      new THREE.ShaderMaterial({
+        uniforms: {
+          baseTexture: { value: null },
+          bloomTexture: { value: bloomComposer.renderTarget2.texture },
+        },
+        vertexShader: vertexshader,
+        fragmentShader: fragmentshader,
+        defines: {},
+      }),
+      'baseTexture',
+    );
+    finalPass.needsSwap = true;
+
+    const finalComposer = new EffectComposer(this.renderer);
+    finalComposer.addPass(renderScene);
+    finalComposer.addPass(finalPass);
+
+    this.finalComposer = finalComposer;
   }
 
   // 搜索高亮地区
   showRegion(provinceName) {
     try {
       if (this.obj3d !== null) {
-        for (let typeElement of this.lastSearch) {
+        for (const typeElement of this.lastSearch) {
           this.obj3d = this.map.children.filter(
             (item) => item.properties.name === typeElement,
           );
@@ -203,7 +254,7 @@ class MapRender {
       // 记录上一次搜索的省份
       this.lastSearch = provinceName;
       this.obj3d = null;
-      for (let typeElement of provinceName) {
+      for (const typeElement of provinceName) {
         this.obj3d = this.map.children.filter(
           (item) => item.properties.name === typeElement,
         );
@@ -276,7 +327,7 @@ class MapRender {
         return !!item.object.parent.userData.isProvince;
       });
       if (!targetProvince) return;
-      console.log('target click', targetProvince);
+      // console.log('target click', targetProvince);
       this.cameraMove(this.cameraInitPosition, targetProvince);
     } else {
       // 空白
@@ -327,7 +378,7 @@ class MapRender {
     if (type === 'reset') {
       // if (obj.parent.position.z === 0) return;
       if (!obj.userData.active) return;
-      console.log(obj, type);
+      // console.log(obj, type);
 
       // obj.parent.translateZ(-1);
       obj.material[0].color.set(this.surfaceColor);
@@ -364,7 +415,7 @@ class MapRender {
         // if (obj.parent.position.z === 1) return;
         // obj.parent.translateZ(1);
         if (obj.userData.active) return;
-        console.log('change', obj);
+        // console.log('change', obj);
         obj.material[0].color.set('red');
         obj.userData.active = true;
 
@@ -378,24 +429,47 @@ class MapRender {
     }
   }
 
-  // 动画
+  darkenNonBloomed(obj) {
+    // const type = obj.type;
+    // if (!typeList.includes(type)) {
+    //   typeList.push(type);
+    // }
+
+    if (
+      highLightFilterList.includes(obj.type) &&
+      bloomLayer.test(obj.layers) === false
+    ) {
+      // 隐藏不需要高亮的
+      obj.visible = false;
+      materials[obj.uuid] = obj.uuid;
+    } else {
+      // console.log(obj);
+    }
+  }
+
+  restoreMaterial(obj) {
+    if (materials[obj.uuid]) {
+      // obj.material = materials[obj.uuid];
+      obj.visible = true;
+      delete materials[obj.uuid];
+    }
+  }
+
+  // render
   render() {
-    requestAnimationFrame(this.render.bind(this));
-
     // render 方法
-    // this.camera.layers.enable(1);
-    // this.bloomComposer.render();
-    // this.renderer.clear();
+    // render scene with bloom
+    this.currentScene.traverse(this.darkenNonBloomed.bind(this));
+    this.bloomComposer.render();
+    this.currentScene.traverse(this.restoreMaterial.bind(this));
 
-    // this.camera.layers.set(0);
-    // this.camera.layers.set(1);
+    // render the entire scene, then render bloom scene on top
+    this.finalComposer.render();
 
+    // this.renderer.render(this.currentScene, this.camera);
     this.controls.update();
-    // this.bloomComposer.render();
-
-    this.renderer.render(this.currentScene, this.camera);
-
     TWEEN.update();
+    requestAnimationFrame(this.render.bind(this));
   }
 
   // China Map JSON
@@ -421,6 +495,7 @@ class MapRender {
       targetScene: this.currentScene,
     });
     const chinaOutlineMesh = chinaOutlineMeshRender();
+    chinaOutlineMesh.layers.enable(BLOOM_SCENE);
     this.scene.add(chinaOutlineMesh);
   }
 
@@ -450,7 +525,7 @@ class MapRender {
       });
       const points = [];
       for (let i = 0; i < polygon.length; i++) {
-        let [x, y] = projection(polygon[i]);
+        const [x, y] = projection(polygon[i]);
         points.push(new THREE.Vector3(x, -y, 6));
         if (i === 0) {
           shape.moveTo(x, -y);
@@ -473,6 +548,7 @@ class MapRender {
       // console.log('extrudeSettings', extrudeSettings, i);
 
       const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      // const geometry1 = new THREE.ExtrudeGeometry(shape1, extrudeSettings);
       // const lineExtrudeGeometry = new THREE.ExtrudeGeometry(
       //   lineGeometry,
       //   extrudeSettings,
@@ -480,7 +556,7 @@ class MapRender {
       // 平面的 style
       const material = new THREE.MeshBasicMaterial({
         // color: this.surfaceColor,
-        // transparent: true,
+        // transparent: false,
         // opacity: 0.9,
         map: texture,
       });
@@ -496,11 +572,20 @@ class MapRender {
       // });
 
       const mesh = new THREE.Mesh(geometry, [material, material1]);
+
       const line = new THREE.Line(lineGeometry, lineMaterial);
-      // const outlineShape = new THREE.Mesh(geometry, outlineMaterial);
+      // line.layers.enable(BLOOM_SCENE);
+
+      // const outlineShape = new THREE.Mesh(geometry1, outlineMaterial);
+      // outlineShape.layers.enable(BLOOM_SCENE);
+
       // line.layers.set(1);
       // mesh.layers.set(1);
-      return { mesh, line };
+      return {
+        mesh,
+        line,
+        // outlineShape
+      };
     };
 
     jsondata.features.forEach((elem) => {
@@ -515,9 +600,10 @@ class MapRender {
         coordinates.forEach((coordinate) => {
           // coordinate 多边形数据
           coordinate.forEach((polygon) => {
-            const { mesh, line } = genMaterials(polygon);
+            const { mesh, line, outlineShape } = genMaterials(polygon);
             province.add(mesh);
             province.add(line);
+            // province.add(outlineShape);
           });
         });
       }
@@ -525,10 +611,10 @@ class MapRender {
       if (type === 'Polygon') {
         // 多边形
         coordinates.forEach((polygon) => {
-          const { mesh, line } = genMaterials(polygon);
-
+          const { mesh, line, outlineShape } = genMaterials(polygon);
           province.add(mesh);
           province.add(line);
+          // province.add(outlineShape);
         });
       }
 

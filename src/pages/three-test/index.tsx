@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-// import MapRender from './example/bloom';
+import MapRender from './example/bloom';
 // import MapRender from './example/outline';
-import MapRender from './example/test01';
+// import MapRender from './example/test01';
+// import MapRender from './example/test01';
 
 const ThreeTest: React.FC<any> = () => {
   const [map, setMap] = useState<any>({});

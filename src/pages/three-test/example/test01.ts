@@ -16,6 +16,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import skyPng from '@/static/img/sky.png';
 
 const vertexshader = `
     varying vec2 vUv;
@@ -42,13 +43,21 @@ const fragmentshader = `
     }
 `;
 
+const highLightFilterList = ['Line', 'Mesh'];
+
 const ENTIRE_SCENE = 0,
   BLOOM_SCENE = 1;
 
 const MapRender = (canvas) => {
+  const setScene = () => {
+    const textureLoader = new THREE.TextureLoader(); // 纹理加载器
+    const texture = textureLoader.load(skyPng);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    scene.background = texture;
+  };
   const bloomLayer = new THREE.Layers();
   bloomLayer.set(BLOOM_SCENE);
-
   // 1. 渲染器
   const renderer = new THREE.WebGLRenderer({ canvas });
 
@@ -60,6 +69,7 @@ const MapRender = (canvas) => {
 
   const axesHelper = new THREE.AxesHelper(5000);
   scene.add(axesHelper);
+  // setScene();
 
   //   const cameraHelper = new THREE.CameraHelper(camera);
   //   // 辅助线加入 场景
@@ -93,6 +103,7 @@ const MapRender = (canvas) => {
       },
       position: new THREE.Vector3(0, 0, 0),
     });
+
     cubeMesh.layers.enable(BLOOM_SCENE);
     // const cubeMesh = cubeMaterialRender();
 
@@ -104,6 +115,7 @@ const MapRender = (canvas) => {
     // scene.add(planeMesh);
     scene.add(cubeMesh);
     scene.add(cubeMesh1);
+    cubeMesh.userData.highLight = true;
 
     // scene.add(chinaOutlineMesh);
     // scene.add(shapeMesh);
@@ -116,7 +128,7 @@ const MapRender = (canvas) => {
       0.85,
     );
     bloomPass.threshold = 0;
-    bloomPass.strength = 1.5;
+    bloomPass.strength = 0.5;
     bloomPass.radius = 0;
 
     const bloomComposer = new EffectComposer(renderer);
@@ -169,18 +181,29 @@ const MapRender = (canvas) => {
   const darkMaterial = new THREE.MeshBasicMaterial({ color: 'black' });
 
   function darkenNonBloomed(obj) {
-    console.log('obj', obj);
-    if (obj.isMesh && bloomLayer.test(obj.layers) === false) {
-      // 没有使用高亮图层  存储材质
-      materials[obj.uuid] = obj.material;
-      // 颜色改成黑色
-      obj.material = darkMaterial;
+    if (
+      // !obj.userData.highLight &&
+      highLightFilterList.includes(obj.type) &&
+      bloomLayer.test(obj.layers) === false
+    ) {
+      // 隐藏不需要高亮的
+      obj.visible = false;
+      materials[obj.uuid] = obj.uuid;
+    } else {
+      console.log(
+        'obj',
+        obj,
+        !obj.userData.highLight,
+        highLightFilterList.includes(obj.type),
+        bloomLayer.test(obj.layers) === false,
+      );
     }
   }
 
   function restoreMaterial(obj) {
     if (materials[obj.uuid]) {
-      obj.material = materials[obj.uuid];
+      // obj.material = materials[obj.uuid];
+      obj.visible = true;
       delete materials[obj.uuid];
     }
   }
