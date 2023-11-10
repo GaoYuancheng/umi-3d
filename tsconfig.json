@@ -10,7 +10,7 @@
     "sourceMap": true,
     "baseUrl": "./",
     "allowJs": true,
-    "strict": true,
+    // "strict": true,
     "paths": {
       "@/*": ["src/*"],
       "@@/*": ["src/.umi/*"]

@@ -10,6 +10,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import MapPng from '@/static/img/map.png';
+import Png1024 from '@/static/img/1024-1024.jpg';
 import grassPng from '@/static/img/grass.png';
 import {
   chinaOutlineMeshRender,
@@ -67,6 +68,9 @@ class MapRender {
   scene1 = new THREE.Scene();
   currentScene = this.scene;
   currentLevel = 1; // country province
+  // 点击之后是否有移动过
+  mouseDownMoving = false;
+  mouseDown = false;
 
   levelSceneMap = {
     1: this.scene,
@@ -80,7 +84,7 @@ class MapRender {
   init() {
     // THREE.Cache.enabled = true;
 
-    this.cubeMesh = cubeMaterialRender();
+    this.cubeMesh = cubeMaterialRender({ position: { x: 10, y: 0, z: 18 } });
     this.cubeMesh.layers.enable(BLOOM_SCENE);
     // this.cubeMesh.visible = false;
 
@@ -89,9 +93,9 @@ class MapRender {
     this.setScene();
     this.setCamera();
     this.setRenderer();
-    // this.setHelper();
+    this.setHelper();
     this.setCompose();
-    this.setRaycaster();
+    // this.setRaycaster();
     this.loadMapData();
     this.render();
   }
@@ -107,11 +111,9 @@ class MapRender {
   setHelper() {
     const axesHelper = new THREE.AxesHelper(5000);
     const cameraHelper = new THREE.CameraHelper(this.camera);
-    const helper = new THREE.CameraHelper(this.camera);
     // 辅助线加入 场景
-    this.scene.add(cameraHelper);
+    // this.scene.add(cameraHelper);
     this.scene.add(axesHelper);
-    this.scene.add(helper);
   }
 
   // 相机动画
@@ -349,6 +351,7 @@ class MapRender {
     this.labelDom = document.getElementById('label');
 
     const onMouseMove = (event) => {
+      if (this.mouseDown) this.mouseDownMoving = true;
       // 将鼠标位置归一化为设备坐标。x 和 y 方向的取值范围是 (-1 to +1)
 
       this.mouse.x = (event.clientX / this.container.offsetWidth) * 2 - 1;
@@ -358,14 +361,21 @@ class MapRender {
       this.transSelect();
     };
 
-    const onMouseClick = (event) => {
+    const onMouseUp = (event) => {
       this.mouse.x = (event.clientX / this.container.offsetWidth) * 2 - 1;
       this.mouse.y = -(event.clientY / this.container.offsetHeight) * 2 + 1;
-      this.onMouseClick();
+      if (!this.mouseDownMoving) this.onMouseClick();
+      this.mouseDown = false;
+      this.mouseDownMoving = false;
+    };
+
+    const onMouseDown = (event) => {
+      this.mouseDown = true;
     };
 
     window.addEventListener('mousemove', onMouseMove, false);
-    window.addEventListener('click', onMouseClick, false);
+    window.addEventListener('mousedown', onMouseDown, false);
+    window.addEventListener('mouseup', onMouseUp, false);
   }
 
   setLight() {
@@ -459,14 +469,14 @@ class MapRender {
   render() {
     // render 方法
     // render scene with bloom
-    this.currentScene.traverse(this.darkenNonBloomed.bind(this));
-    this.bloomComposer.render();
-    this.currentScene.traverse(this.restoreMaterial.bind(this));
+    // this.currentScene.traverse(this.darkenNonBloomed.bind(this));
+    // this.bloomComposer.render();
+    // this.currentScene.traverse(this.restoreMaterial.bind(this));
 
     // render the entire scene, then render bloom scene on top
-    this.finalComposer.render();
+    // this.finalComposer.render();
 
-    // this.renderer.render(this.currentScene, this.camera);
+    this.renderer.render(this.currentScene, this.camera);
     this.controls.update();
     TWEEN.update();
     requestAnimationFrame(this.render.bind(this));
@@ -511,10 +521,17 @@ class MapRender {
       .translate([0, 0]);
 
     const textureLoader = new THREE.TextureLoader(); // 纹理加载器
-    const texture = textureLoader.load(MapPng);
+    const texture = textureLoader.load(Png1024);
+    texture.repeat = {
+      x: 0.01,
+      y: 0.01,
+    };
+    texture.center = {
+      x: 0.5,
+      y: 0.5,
+    };
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-
     const genMaterials = (polygon) => {
       const shape = new THREE.Shape();
       // const shape1 = new THREE.Shape();

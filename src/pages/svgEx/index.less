@@ -1,0 +1,83 @@
+.svgEx {
+  display: flex;
+  .svg1 {
+    .progress {
+      stroke: #f7c223;
+      animation: move 2s linear infinite;
+    }
+    .container {
+      animation: container 2s linear infinite;
+    }
+    @keyframes container {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(270deg);
+      }
+    }
+    @keyframes move {
+      //在改变stroke-dashoffset的同时也让圆环旋转
+      0% {
+        stroke-dashoffset: 251px;
+      }
+      50% {
+        stroke-dashoffset: calc(251px * 0.2);
+        transform: rotate(135deg);
+      }
+      100% {
+        stroke-dashoffset: 251px;
+        transform: rotate(450deg);
+      }
+    }
+  }
+
+  .svg2 {
+    background: #2e4057;
+    svg {
+      stroke: hsl(189, 68%, 75%);
+      stroke-width: 1px;
+      fill: hsl(189, 68%, 75%, 0%);
+      animation: color-change 1s ease-in forwards 3.8s;
+    }
+    //每个字母的描边动画执行时间和开始时间不同
+    path:nth-child(1) {
+      stroke-dasharray: 246;
+      stroke-dashoffset: 246;
+      animation: show 1s linear forwards;
+    }
+    path:nth-child(2) {
+      stroke-dasharray: 253;
+      stroke-dashoffset: 253;
+      animation: show 1.2s linear forwards 0.5s;
+    }
+    path:nth-child(3) {
+      stroke-dasharray: 334;
+      stroke-dashoffset: 334;
+      animation: show 1.4s linear forwards 1s;
+    }
+    path:nth-child(4) {
+      stroke-dasharray: 246;
+      stroke-dashoffset: 246;
+      animation: show 1.6s linear forwards 1.5s;
+    }
+    path:nth-child(5) {
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      animation: show 1.8s linear forwards 2s;
+    }
+    @keyframes show {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    @keyframes color-change {
+      to {
+        stroke: transparent;
+        fill: hsl(189, 68%, 75%);
+      }
+    }
+  }
+
+  //给外框也加上旋转动画，两个旋转叠加，效果更自然
+}

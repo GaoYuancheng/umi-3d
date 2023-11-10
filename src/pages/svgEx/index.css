@@ -1,0 +1,28 @@
+.progress {
+  stroke: #f7c223;
+  animation: move 2s linear infinite;
+}
+.container {
+  animation: container 2s linear infinite;
+}
+@keyframes container {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(270deg);
+  }
+}
+@keyframes move {
+  0% {
+    stroke-dashoffset: 251px;
+  }
+  50% {
+    stroke-dashoffset: calc(251px * 0.2);
+    transform: rotate(135deg);
+  }
+  100% {
+    stroke-dashoffset: 251px;
+    transform: rotate(450deg);
+  }
+}
