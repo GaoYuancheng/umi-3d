@@ -3,28 +3,15 @@
 }
 
 .pageIndex {
-  --testColor: pink;
-  --testColorClassName: classname1;
-  --liChildNumLess: 2;
-  @testColorLess: var(--testColor);
-  @testColorClassName: var(--testColorClassName);
-  @testColorClassName1: classname1;
-  @liChildNumLess: var(--liChildNumLess);
-  .test {
-    // color: var(--testColor);
-    color: @testColorLess;
-  }
   :global {
     ul {
       // li:nth-child(@{liChildNumLess}){
-      li:nth-child(2){
-      // li:nth-child(2){
-        color: pink
+      li:nth-child(2) {
+        color: pink;
+        font-size: 1px;
       }
     }
-    .@{testColorClassName1}{
-      color: red
-    }
+
     .ant-card {
       .ant-card-body {
         padding: 0;

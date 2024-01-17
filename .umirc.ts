@@ -17,7 +17,7 @@ export default defineConfig({
     // // 删除 Umi 内置插件
     // memo.plugins.delete('hmr');
   },
-  clickToComponent: {},
+  // clickToComponent: {},
   routes: [
     {
       path: '/',
@@ -36,10 +36,13 @@ export default defineConfig({
     { path: '/react-grid-layout', component: '@/pages/react-grid-layout' },
     { path: '/pro-table', component: '@/pages/pro-table' },
     { path: '/context-test', component: '@/pages/context-test' },
+    { path: '/html2canvas', component: '@/pages/html2canvas' },
+    { path: '/request-page', component: '@/pages/request-page' },
   ],
   externals: {
     // antd: 'antd',
     // react: 'React',
     // ['react-dom']: 'ReactDOM',
   },
+  headScripts: [{ src: '/head.js', defer: true }],
 });

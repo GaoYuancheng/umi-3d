@@ -1,6 +1,6 @@
 import styles from './index.less';
-import React from 'react';
-import { ConfigProvider, Form, Input } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Button, ConfigProvider, Form, Input } from 'antd';
 import { Link } from '@umijs/max';
 import { getReactInstanceForElement } from '@/utils';
 
@@ -22,6 +22,18 @@ const MyInput: React.FC<{ onChange?: any; value?: any }> = ({
   );
 };
 
+function createConnection() {
+  // 真实的实现会将其连接到服务器，此处代码只是示例
+  return {
+    connect() {
+      console.log('✅ 连接中……');
+    },
+    disconnect() {
+      console.log('❌ 连接断开。');
+    },
+  };
+}
+
 const IndexPage = () => {
   const add = async () => {
     const a = { a: 'a' };
@@ -29,6 +41,12 @@ const IndexPage = () => {
   };
 
   const [form] = Form.useForm();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+  }, []);
 
   return (
     <div className={styles.pageIndex}>
@@ -62,30 +80,17 @@ const IndexPage = () => {
       <div>
         <Link to="/map">/map</Link>
       </div>
-      <div>
-        <ConfigProvider prefixCls="ss">
-          <Form
-            form={form}
-            onValuesChange={(changedValues: any, values: any) => {
-              console.log('changedValues', values);
-            }}
-          >
-            <Form.Item name="myInput" label="myInput">
-              <MyInput
-                onChange={(value: any, myParams: any) => {
-                  console.log('myOnchange', value, myParams);
-                  form.setFieldsValue({
-                    myInput1: value,
-                  });
-                }}
-              />
-            </Form.Item>
-            <Form.Item name="myInput1" label="myInput1">
-              <Input />
-            </Form.Item>
-          </Form>
-        </ConfigProvider>
-      </div>
+      {/* <div>
+        <Button
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          openModal
+        </Button>
+      </div> */}
+      <div id="root"></div>
+      <div id="root-salve"></div>
     </div>
   );
 };

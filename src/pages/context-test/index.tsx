@@ -11,22 +11,36 @@ const wait = (cb, time) => {
 };
 
 const ViewForCompanyContent: React.FC = () => {
-  const { projectInfo, setProjectInfo, asyncList, setAsyncList } =
-    useContext(TestContext);
-  const { departmentId, projectId } = projectInfo || {};
+  const { store, setStore } = useContext(TestContext);
 
-  console.log('textContest', projectInfo);
+  const {
+    organizationInfo: { projectId, projectName, departmentId },
+    bimGisInfo,
+  } = store;
+
   useEffect(() => {
-    setProjectInfo({
-      departmentId: '11',
-    });
+    setStore(
+      'organizationInfo',
+      {
+        departmentId: 's',
+      },
+      'merge',
+    );
     wait(() => {
-      setProjectInfo({
-        projectId: 's',
-      });
-      setAsyncList({
-        list: '',
-      });
+      setStore(
+        'organizationInfo',
+        {
+          projectId: '4',
+        },
+        'merge',
+      );
+      setStore(
+        'bimGisInfo',
+        {
+          list: [1, 2, 5],
+        },
+        'merge',
+      );
     }, 2000);
   }, []);
 
@@ -34,7 +48,7 @@ const ViewForCompanyContent: React.FC = () => {
     <div>
       <div>departmentId: {departmentId}</div>
       <div>projectId: {projectId}</div>
-      <div> asyncList: {asyncList.list} </div>
+      <div> bimGisInfoList: {bimGisInfo.list} </div>
     </div>
   );
 };
